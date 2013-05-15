@@ -40,8 +40,8 @@ function gallery_zip_start() {
 }
 
 function add_hooks() {
-	add_action( 'wp_ajax_get_galleryzip',        __NAMESPACE__ . '\get_images_ajax_callback', 10, 0 );
-	add_action( 'wp_ajax_nopriv_get_galleryzip', __NAMESPACE__ . '\get_images_ajax_callback', 10, 0 );
+	add_action( 'wp_ajax_get_galleryzip',        __NAMESPACE__ . '\get_gallery_zip', 10, 0 );
+	add_action( 'wp_ajax_nopriv_get_galleryzip', __NAMESPACE__ . '\get_gallery_zip', 10, 0 );
 }
 
 function enqueue_scripts() {
@@ -77,7 +77,7 @@ function get_gallery_zip() {
 	if ( 0 >= $post_id )
 		$send_result( var_export( $_POST, true ) );
 
-	$images = GalleryZip::get_images_zip( $post_id, $gallery_id );
+	$images = GalleryZip::get_images_ajax_callback( $post_id, $gallery_id );
 	$send_result( $images );
 }
 
@@ -115,7 +115,7 @@ class GalleryZip
 		$post  = get_post();
 
 		require_once ABSPATH . 'wp-includes/media.php';
-		self::get_gallery_images_from_shortcode( $atts );
+		self::get_gallery_images_from_shortcode( $post->ID, $atts );
 		$output = gallery_shortcode( $post->ID, $atts );
 
 		$gallery_id = count( self::$images[$post->ID] ) - 1;
@@ -149,6 +149,7 @@ class GalleryZip
 				'post_status'    => 'inherit',
 				'post_type'      => 'attachment',
 				'post_mime_type' => 'image',
+				'numberposts'    => -1,
 		);
 
 		// handle gallery WP3.5+
