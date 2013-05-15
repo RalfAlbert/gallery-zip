@@ -118,27 +118,28 @@ class GalleryZip
 		self::get_gallery_images_from_shortcode( $post->ID, $atts );
 		$output = gallery_shortcode( $post->ID, $atts );
 
-		$gallery_id = count( self::$images[$post->ID] ) - 1;
+		$gallery_id = ( isset( self::$images[$post->ID] ) ) ?
+			count( self::$images[$post->ID] ) - 1 : 0;
 
 		$output .= sprintf( '<div><a href="#" gallery-id="%d" post-id="%d" class="gallery-zip">%s</a></div>', $gallery_id, $post->ID, __( 'Get as Zip' ) );
 
 		return $output;
 	}
 
-	protected static function get_gallery_images_from_shortcode( $id, $atts ) {
+	protected static function get_gallery_images_from_shortcode( $post_id, $atts ) {
 		// use the post ID if the attribute 'ids' is not set or empty
 		$id = ( ! isset( $atts['ids'] ) || empty( $atts['ids'] ) ) ?
-			(int) $id : $atts['ids'];
+			(int) $post_id : $atts['ids'];
 
 		$exclude = ( isset( $atts['exclude'] ) && ! empty( $atts['exclude'] ) ) ?
 			$atts['exclude'] : '';
 
-		if ( ! isset( self::$images[$id] ) || ! is_array( self::$images[$id] ) )
-			self::$images[$id] = array();
+		if ( ! isset( self::$images[$post_id] ) || ! is_array( self::$images[$post_id] ) )
+			self::$images[$post_id] = array();
 
 		$images = self::get_gallery_images( $id, $exclude );
 
-		array_push( self::$images[$id], $images );
+		array_push( self::$images[$post_id], $images );
 
 		return $images;
 	}
