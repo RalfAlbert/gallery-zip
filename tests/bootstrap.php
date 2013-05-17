@@ -2,14 +2,22 @@
 // Load WordPress test environment
 // https://github.com/nb/wordpress-tests
 //
-if ( ! defined( 'PHPUnitClassesPath' ) )
-	define( 'PHPUnitClassesPath', dirname( dirname( __FILE__ ) ) . '/classes/' );
+$GLOBALS['wp_tests_options'] = array(
+		'active_plugins' => array( 'gallery-zip/gallery-zip.php' ),
+		'template'       => 'twentyeleven',
+		'stylesheet'     => 'twentyeleven',
+);
 
-// The path to wordpress-tests
-$path = 'wordpress-tests/bootstrap.php';
 
-if( file_exists( $path ) ) {
-    require_once $path;
-} /*else {
-    exit( "Couldn't find path to wordpress-tests/bootstrap.php\n" );
-}*/
+// define path to plugin folder
+$plugin_path = dirname( dirname( __FILE__ ) );
+! defined( 'PLUGIN_BASE_PATH' )    AND define( 'PLUGIN_BASE_PATH', $plugin_path );
+! defined( 'WPTESTS_CONFIG_FILE' ) AND define( 'WPTESTS_CONFIG_FILE', dirname( __FILE__ ) . '/unittests-config.php' );
+! defined( 'WPTESTS_QUIET_INSTALL' ) AND define( 'WPTESTS_QUIET_INSTALL', true );
+
+// include bootstrap
+try {
+    require_once '/WordPressTests/bootstrap.php';
+} catch (Exception $e) {
+    exit( "Couldn't find path to WordPressTests/bootstrap.php\n" );
+}

@@ -1,5 +1,5 @@
 <?php
-require_once PHPUnitClassesPath . 'galleryzip.php';
+require_once PLUGIN_BASE_PATH . '/classes/galleryzip.php';
 
 /**
  * Test class for GalleryZip.
@@ -16,46 +16,36 @@ class GalleryZipTest extends PHPUnit_Framework_TestCase
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
      */
-    protected function setUp()
-    {
-        $this->object = new GalleryZip;
+    protected function setUp() {
+        $this->object = GalleryZip\GalleryZip::get_instance();
     }
 
     /**
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown()
-    {
+    protected function tearDown() {}
+
+    /**
+     * @covers GalleryZip\GalleryZip::get_instance()
+     */
+    public function testGet_instance() {
+    	$this->assertNotNull( $this->object );
     }
 
     /**
-     * @todo Implement testGet_instance().
+     * @covers GalleryZip\GalleryZip::gallery_zip_shortcode().
      */
-    public function testGet_instance()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @todo Implement testGallery_zip_shortcode().
-     */
-    public function testGallery_zip_shortcode()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+    public function testGallery_zip_shortcode() {
+    	$this->markTestSkipped( 'Need mocking!' );
+    	$output = $this->object->gallery_zip_shortcode( array( 'ids' => '127,128,129' ) );
+    	$this->assertNotEmpty( $output );
     }
 
     /**
      * @todo Implement testSave_in_session().
      */
-    public function testSave_in_session()
-    {
+    public function testSave_in_session() {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
           'This test has not been implemented yet.'
@@ -65,8 +55,7 @@ class GalleryZipTest extends PHPUnit_Framework_TestCase
     /**
      * @todo Implement testGet_images_ajax_callback().
      */
-    public function testGet_images_ajax_callback()
-    {
+    public function testGet_images_ajax_callback() {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
           'This test has not been implemented yet.'

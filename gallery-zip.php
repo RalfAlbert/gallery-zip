@@ -29,7 +29,8 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\gallery_zip_start', 10, 0 );
 
 function gallery_zip_start() {
 	// simple autoloader
-	$classes = glob( 'classes/*.php' );
+	$classes = glob( dirname( __FILE__ ) . '/classes/*.php' );
+
 	if ( ! empty( $classes ) ) {
 		foreach ( $classes as $class )
 			require_once $class;
