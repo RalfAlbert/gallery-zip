@@ -1,4 +1,6 @@
 <?php
+namespace GalleryZip;
+
 class GalleryZip
 {
 	const SESSION_KEY = 'gallery-zip';
@@ -30,11 +32,12 @@ class GalleryZip
 	}
 
 	public static function gallery_zip_shortcode( $atts ) {
-		$post  = get_post();
 
 		require_once ABSPATH . 'wp-includes/media.php';
+		$output = gallery_shortcode( $atts );
+
+		$post  = get_post();
 		self::get_gallery_images_from_shortcode( $post->ID, $atts );
-		$output = gallery_shortcode( $post->ID, $atts );
 
 		$gallery_id = ( isset( self::$images[$post->ID] ) ) ?
 			count( self::$images[$post->ID] ) - 1 : 0;
