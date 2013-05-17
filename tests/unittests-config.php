@@ -1,10 +1,14 @@
 <?php
 /* Path to the WordPress codebase you'd like to test. Add a backslash in the end. */
-define( 'ABSPATH', 'd:/htdocs/wpse/' );
+preg_match( '#(.+)wp-content#is', dirname( __FILE__ ), $match );
+if ( isset( $match[1] ) )
+	define( 'ABSPATH', $match[1] );
+else
+	die( 'Could not resolve ABSPATH' );
 
-define( 'DB_NAME', 'wpse' );
-define( 'DB_USER', 'v035800' );
-define( 'DB_PASSWORD', 'fuji' );
+define( 'DB_NAME', 'wptest' );
+define( 'DB_USER', 'root' );
+define( 'DB_PASSWORD', '' );
 define( 'DB_HOST', 'localhost' );
 define( 'DB_CHARSET', 'utf8' );
 define( 'DB_COLLATE', '' );
