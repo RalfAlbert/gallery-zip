@@ -34,17 +34,18 @@ function gallery_zip_start() {
 	if ( ! empty( $classes ) ) {
 		foreach ( $classes as $class )
 			require_once $class;
+
+
+		add_action( 'init', __NAMESPACE__ . '\add_hooks', 10, 0 );
+		add_action( 'init', __NAMESPACE__ . '\enqueue_scripts', 10, 0 );
+
+		if ( is_admin() )
+			return;
+
+		// this is only needed on the frontend
+		GalleryZip::get_instance( new GalleryZip_DataContainer() );
+
 	}
-
-	add_action( 'init', __NAMESPACE__ . '\add_hooks', 10, 0 );
-	add_action( 'init', __NAMESPACE__ . '\enqueue_scripts', 10, 0 );
-
-	if ( is_admin() )
-		return;
-
-	// this is only needed on the frontend
-	GalleryZip::get_instance();
-	add_action( 'shutdown', array( __NAMESPACE__ . '\GalleryZip', 'save_in_session' ), 10, 0 );
 }
 
 function add_hooks() {

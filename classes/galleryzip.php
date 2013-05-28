@@ -5,6 +5,8 @@ class GalleryZip
 {
 	const SESSION_KEY = 'gallery-zip';
 
+	protected static $dc = null;
+
 	// one of a predefined sizes (thumbnail, medium, large or full) or a
 	// custom size registered with add_image_size
 	const IMAGE_SIZE  = 'full';
@@ -13,9 +15,8 @@ class GalleryZip
 
 	public static $images = array();
 
-	public static function get_instance() {
-		if ( ! session_id() )
-			session_start();
+	public static function get_instance( $dc = null ) {
+		self::get_datacontainer( $dc );
 
 		if ( null === self::$instance )
 			self::$instance = new self();
@@ -24,15 +25,20 @@ class GalleryZip
 	}
 
 	private final function __construct() {
-		if ( ! session_id() )
-			session_start();
-
 		remove_shortcode( 'gallery' );
 		add_shortcode( 'gallery', array( __CLASS__, 'gallery_zip_shortcode' ) );
 	}
 
-	public static function gallery_zip_shortcode( $atts ) {
+	private static function get_datacontainer( $dc ) {
+		if ( null === self::$dc ) {
+			if ( null !== $dc && ( $dc instanceof GalleryZip_DataContainer ) )
+				self::$dc = $dc;
+			else
+				self::$dc = new GalleryZip_DataContainer();
+		}
+	}
 
+	public static function gallery_zip_shortcode( $atts ) {
 		require_once ABSPATH . 'wp-includes/media.php';
 		$output = gallery_shortcode( $atts );
 
@@ -61,6 +67,8 @@ class GalleryZip
 		$images = self::get_gallery_images( $id, $exclude );
 
 		array_push( self::$images[$post_id], $images );
+
+		self::$dc->images = $images;
 
 		return $images;
 	}
@@ -102,17 +110,11 @@ class GalleryZip
 		return $images;
 	}
 
-	public static function save_in_session() {
-		$_SESSION[self::SESSION_KEY] = self::$images;
-		session_write_close();
-	}
-
 	public static function get_images_ajax_callback( $post_id = 0, $gallery_id = 0 ) {
-		if ( ! session_id() )
-			session_start();
+		self::get_datacontainer();
 
 		if ( empty( self::$images ) )
-			self::$images = $_SESSION[self::SESSION_KEY];
+			self::$images = self::$dc->images;
 
 		return ( isset( self::$images[$post_id][$gallery_id] ) ) ?
 			self::$images[$post_id][$gallery_id] : array();
