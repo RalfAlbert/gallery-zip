@@ -9,6 +9,7 @@ class Zipper
 
 	private $tempdir  = '/zipper_temp';
 	private $tempfile = 'zip_temp.zip';
+	private static $tempdir_exists = false;
 
 	public function __construct() {
 		global $wp_filesystem;
@@ -19,6 +20,9 @@ class Zipper
 		}
 
 		$this->filesystem = &$wp_filesystem;
+
+		$tempdir = $this->get_tempdir();
+		self::$tempdir_exists = is_dir( $tempdir );
 
 	}
 
@@ -31,11 +35,19 @@ class Zipper
 		return $this->errors;
 	}
 
-	public function create_tempdir() {
-		$this->tempdir = WP_CONTENT_DIR . $this->tempdir;
+	protected function get_tempdir() {
+		return rtrim( WP_CONTENT_DIR . $this->tempdir, '/' ) . '/';
+	}
 
-		return ( ! is_dir( $this->tempdir ) ) ?
-			$this->filesystem->mkdir( $this->tempdir ) : true;
+	public function create_tempdir() {
+		// nothing to do
+		if ( true === self::$tempdir_exists )
+			return true;
+
+		$tempdir = $this->get_tempdir();
+
+		return ( ! is_dir( $tempdir ) ) ?
+			$this->filesystem->mkdir( $tempdir ) : true;
 	}
 
 	public function check_target( $target ) {
@@ -73,7 +85,7 @@ class Zipper
 		$source_files = $this->check_source_dir( $source_dir );
 
 		if ( empty( $source_files ) )
-			return false;
+			return $this->add_error( 'No source with files for zipping given' );
 
 		$target = $this->check_target( $target );
 
@@ -81,17 +93,18 @@ class Zipper
 			return false;
 
 		$zip     = new \ZipArchive();
-		$zipfile = $this->tempdir . $this->tempfile;
+		$tempdir = $this->get_tempdir();
+		$zipfile = $tempdir . $this->tempfile;
 
 		if ( $zip->open( $zipfile, \ZIPARCHIVE::CREATE ) !== true )
-			return $this->add_error( 'Could not create temporary zip archive ' . $zipfile );
+			return $this->add_error( "Could not create temporary zip archive {$zipfile}" );
 
 		foreach ( $source_files as $file )
 			$zip->addFile( $file, basename( $file ) );
 
 		$zip->close();
 
-		$copy = $this->filesystem->copy( $zipfile, $target );
+		$copy = $this->filesystem->copy( $zipfile, $target, true );
 
 		if ( ! $copy )
 			return $this->add_error( "Cannot copy temporary zip file to target {$target}" );
@@ -101,4 +114,33 @@ class Zipper
 		return true;
 	}
 
+	public function copy_files( $file_list ) {
+		if ( empty( $file_list ) || ! is_array( $file_list ) )
+			return false;
+
+		if ( true !== self::$tempdir_exists )
+			$this->create_tempdir();
+
+		$tempdir = $this->get_tempdir();
+
+		// trash all content inside tempdir
+		$trash = glob( $tempdir . '*' );
+		array_walk( $trash, function( $file ) { unlink( $file ); } );
+
+		foreach ( $file_list as $file ) {
+			$destination = sprintf( '%s/%s', $tempdir, basename( $file ) );
+			$this->filesystem->copy( $file, $destination, true, '0777' );
+		}
+
+		return true;
+	}
+
+	public function zip_images( $zipname, $images ) {
+		$this->copy_files( $images );
+
+		$tempdir = $this->get_tempdir();
+		$target  = WP_CONTENT_DIR . '/' . $zipname;
+
+		$this->zip_dir( $target, $tempdir );
+	}
 }

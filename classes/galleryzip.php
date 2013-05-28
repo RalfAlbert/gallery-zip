@@ -1,6 +1,8 @@
 <?php
 namespace GalleryZip;
 
+use GalleryZip\Zipper\Zipper;
+
 class GalleryZip
 {
 	const SESSION_KEY = 'gallery-zip';
@@ -29,7 +31,7 @@ class GalleryZip
 		add_shortcode( 'gallery', array( __CLASS__, 'gallery_zip_shortcode' ) );
 	}
 
-	private static function get_datacontainer( $dc ) {
+	private static function get_datacontainer( $dc = null ) {
 		if ( null === self::$dc ) {
 			if ( null !== $dc && ( $dc instanceof GalleryZip_DataContainer ) )
 				self::$dc = $dc;
@@ -68,7 +70,7 @@ class GalleryZip
 
 		array_push( self::$images[$post_id], $images );
 
-		self::$dc->images = $images;
+		self::$dc->images = self::$images;
 
 		return $images;
 	}
@@ -116,8 +118,18 @@ class GalleryZip
 		if ( empty( self::$images ) )
 			self::$images = self::$dc->images;
 
-		return ( isset( self::$images[$post_id][$gallery_id] ) ) ?
+		$images = ( isset( self::$images[$post_id][$gallery_id] ) ) ?
 			self::$images[$post_id][$gallery_id] : array();
+
+		if ( ! empty( $images ) ) {
+			$zipper = new Zipper();
+			$zipper->zip_images( 'Testzip.zip', $images );
+		}
+
+		return true;
+
+//		return ( isset( self::$images[$post_id][$gallery_id] ) ) ?
+//			self::$images[$post_id][$gallery_id] : array();
 	}
 
 }
