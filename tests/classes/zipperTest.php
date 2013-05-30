@@ -140,6 +140,24 @@ class ZipperTest extends \WP_UnitTestCase
 		$this->assertFileExists( $target );
 	}
 
+	public function testZipFiles_Force_PclZip() {
+		$zipper   = $this->zipper;
+		$cachedir = $zipper::$cache_dir;
+
+		$testdir = $this->create_test_dir();
+		$this->fill_test_dir( $testdir );
+
+		$target    = $cachedir . 'test.zip';
+		$file_list = glob( $testdir . '*' );
+
+		// forcing to use PclZip
+		$zipper::$pclzip = true;
+		$condition = $this->zipper->zip_files( $target, $file_list );
+
+		$this->assertTrue( $condition );
+		$this->assertFileExists( $target );
+	}
+
 	/**
 	 * @covers GalleryZip\Zipper\Zipper::zip_images()
 	 */
