@@ -115,6 +115,8 @@ class GalleryZip
 	public static function get_images_ajax_callback( $post_id = 0, $gallery_id = 0 ) {
 		self::get_datacontainer();
 
+		$response = array();
+
 		if ( empty( self::$images ) )
 			self::$images = self::$dc->images;
 
@@ -122,14 +124,23 @@ class GalleryZip
 			self::$images[$post_id][$gallery_id] : array();
 
 		if ( ! empty( $images ) ) {
-			$zipper = new Zipper();
-			$zipper->zip_images( 'Testzip.zip', $images );
+			$zipname = sprintf( '%s-%d.zip', 'gallery', $gallery_id );
+			$zipper  = new Zipper();
+			$zipfile = $zipper->zip_images( $zipname, $images );
+/*
+			if ( file_exists( $zipfile ) ) {
+				$content = array();
+				header( 'Content-Type: application/zip' );
+				header( 'Content-Length: ' . filesize( $zipfile ) );
+				header( 'Content-Disposition: attachment; filename="' . basename( $zipfile ) . '"' );
+
+				readfile( $zipfile );
+			}
+*/
+			return $response['result'] = $zipfile;
 		}
 
-		return true;
-
-//		return ( isset( self::$images[$post_id][$gallery_id] ) ) ?
-//			self::$images[$post_id][$gallery_id] : array();
+		return $response['result'] = false;
 	}
 
 }

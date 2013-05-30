@@ -6,10 +6,9 @@ class Zipper
 	public $errors = array();
 
 	private $filesystem = null;
+	private static $cache_dir_exists = false;
 
-	private $tempdir  = '/zipper_temp';
-	private $tempfile = 'zip_temp.zip';
-	private static $tempdir_exists = false;
+	public static $cache_dir = 'galleryzip-cache';
 
 	public function __construct() {
 		global $wp_filesystem;
@@ -21,8 +20,8 @@ class Zipper
 
 		$this->filesystem = &$wp_filesystem;
 
-		$tempdir = $this->get_tempdir();
-		self::$tempdir_exists = is_dir( $tempdir );
+		if ( false == self::$cache_dir_exists || ! is_dir( self::$cache_dir ) )
+			$this->create_cache_dir();
 
 	}
 
@@ -31,116 +30,48 @@ class Zipper
 		return ! empty( $msg );
 	}
 
-	public function get_errors() {
-		return $this->errors;
-	}
+	protected function create_cache_dir() {
+		if ( true === self::$cache_dir_exists || is_dir( self::$cache_dir ) )
+			return self::$cache_dir;
 
-	protected function get_tempdir() {
-		return rtrim( WP_CONTENT_DIR . $this->tempdir, '/' ) . '/';
-	}
+		$cachedir = sprintf( '%s/%s', WP_CONTENT_DIR, ltrim( self::$cache_dir, '/' ) );
+		$success = $this->filesystem->mkdir( $cachedir, true );
 
-	public function create_tempdir() {
-		// nothing to do
-		if ( true === self::$tempdir_exists )
-			return true;
+		if ( true == $success )
+			self::$cache_dir = rtrim( $cachedir, '/' ) . '/';
 
-		$tempdir = $this->get_tempdir();
-
-		return ( ! is_dir( $tempdir ) ) ?
-			$this->filesystem->mkdir( $tempdir ) : true;
-	}
-
-	public function check_target( $target ) {
-		if ( empty( $target ) )
-			$this->add_error( 'No target filename given' );
-
-		if ( basename( $target ) === $target )
-			$this->add_error( "Cannot resolve path to {$target}" );
-
-		if ( ! is_dir( dirname( $target ) ) || ! is_writeable( dirname( $target ) ) )
-			$this->add_error( "Path to {$target} does not exists or is not writeable" );
-
-		return empty( $this->errors ) ? $target : '';
-	}
-
-	public function check_source_dir( $source ) {
-		if ( empty( $source ) )
-			$this->add_error( 'No source given' );
-
-		$source = rtrim( $source, '/' ) . '/';
-
-		if ( ! is_dir( $source ) )
-			$this->add_error( "Source {$source} is not a directory" );
-
-		$files = glob( $source . '*' );
-
-		if ( empty( $files ) )
-			$this->add_error( "No files for zipping found in {$source}" );
-
-		return empty( $this->errors ) ? $files : array();
+		return self::$cache_dir;
 
 	}
 
-	public function zip_dir( $target, $source_dir ) {
-		$source_files = $this->check_source_dir( $source_dir );
-
-		if ( empty( $source_files ) )
-			return $this->add_error( 'No source with files for zipping given' );
-
-		$target = $this->check_target( $target );
-
-		if ( empty( $target ) )
-			return false;
-
-		$zip     = new \ZipArchive();
-		$tempdir = $this->get_tempdir();
-		$zipfile = $tempdir . $this->tempfile;
-
-		if ( $zip->open( $zipfile, \ZIPARCHIVE::CREATE ) !== true )
-			return $this->add_error( "Could not create temporary zip archive {$zipfile}" );
-
-		foreach ( $source_files as $file )
-			$zip->addFile( $file, basename( $file ) );
-
-		$zip->close();
-
-		$copy = $this->filesystem->copy( $zipfile, $target, true );
-
-		if ( ! $copy )
-			return $this->add_error( "Cannot copy temporary zip file to target {$target}" );
-		else
-			unlink( $zipfile );
-
-		return true;
+	protected function to_url( $filename ) {
+		return str_replace( WP_CONTENT_DIR,	WP_CONTENT_URL, $filename );
 	}
 
-	public function copy_files( $file_list ) {
-		if ( empty( $file_list ) || ! is_array( $file_list ) )
-			return false;
+	public function zip_files( $target, $file_list ) {
+		if ( ! is_array( $file_list ) )
+			$file_list = (array) $file_list;
 
-		if ( true !== self::$tempdir_exists )
-			$this->create_tempdir();
+		$zip = new \ZipArchive();
 
-		$tempdir = $this->get_tempdir();
-
-		// trash all content inside tempdir
-		$trash = glob( $tempdir . '*' );
-		array_walk( $trash, function( $file ) { unlink( $file ); } );
+		if ( $zip->open( $target, \ZIPARCHIVE::CREATE ) !== true )
+			return $this->add_error( "Could not create temporary zip archive {$target}" );
 
 		foreach ( $file_list as $file ) {
-			$destination = sprintf( '%s/%s', $tempdir, basename( $file ) );
-			$this->filesystem->copy( $file, $destination, true, '0777' );
+			if ( file_exists( $file ) && is_readable( $file ) )
+				$zip->addFile( $file, basename( $file ) );
 		}
+
+		$zip->close();
 
 		return true;
 	}
 
 	public function zip_images( $zipname, $images ) {
-		$this->copy_files( $images );
+		$zipname = preg_replace( '/\.zip$/is', '', $zipname ) . '.zip';
+		$target  = self::$cache_dir . ltrim( $zipname, '/' );
+		$is_zip  = $this->zip_files( $target, $images );
 
-		$tempdir = $this->get_tempdir();
-		$target  = WP_CONTENT_DIR . '/' . $zipname;
-
-		$this->zip_dir( $target, $tempdir );
+		return ( true === $is_zip ) ? $this->to_url( $target ) : '';
 	}
 }
