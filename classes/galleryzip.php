@@ -124,12 +124,8 @@ class GalleryZip
 
 		if ( ! empty( $images ) ) {
 
-			$format = ( 0 != $gallery_id ) ?
-				sprintf( 'gallery-%d-from-', $gallery_id ) : 'gallery-from-';
-
 			$post_title = sanitize_title_with_dashes( get_the_title( $post_id ) );
-
-			$zipname = sprintf( $format . '%s.zip', $post_title );
+			$zipname = sprintf( 'gallery-%d-from-%s.zip', ( $gallery_id+1 ), $post_title );
 			$zipper  = new Zipper();
 			$zipfile = $zipper->zip_images( $zipname, $images );
 		}
