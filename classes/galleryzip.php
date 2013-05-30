@@ -7,7 +7,7 @@ class GalleryZip
 {
 	const SESSION_KEY = 'gallery-zip';
 
-	protected static $dc = null;
+	private static $dc = null;
 
 	// one of a predefined sizes (thumbnail, medium, large or full) or a
 	// custom size registered with add_image_size
@@ -134,7 +134,7 @@ class GalleryZip
 			$zipfile = $zipper->zip_images( $zipname, $images );
 		}
 
-		$response = ( ! empty( $zipfile ) ) ? $zipfile : false;
+		$response = ( ! empty( $zipfile ) ) ? $zipfile : '';
 
 		return $response;
 	}

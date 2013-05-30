@@ -14,11 +14,22 @@ class GalleryZipTest extends PHPUnit_Framework_TestCase
     protected $object;
 
     /**
+     * point this id to an existing post with a gallery
+     * @var integer
+     */
+    protected $post_id = 555;
+
+    /**
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
      */
     protected function setUp() {
+    	global $post;
+
         $this->object = GalleryZip\GalleryZip::get_instance();
+
+        $post = get_post( $this->post_id );
+
     }
 
     /**
@@ -38,29 +49,8 @@ class GalleryZipTest extends PHPUnit_Framework_TestCase
      * @covers GalleryZip\GalleryZip::gallery_zip_shortcode().
      */
     public function testGallery_zip_shortcode() {
-    	$this->markTestSkipped( 'Need mocking!' );
     	$output = $this->object->gallery_zip_shortcode( array( 'ids' => '127,128,129' ) );
     	$this->assertNotEmpty( $output );
-    }
-
-    /**
-     * @todo Implement testSave_in_session().
-     */
-    public function testSave_in_session() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @todo Implement testGet_images_ajax_callback().
-     */
-    public function testGet_images_ajax_callback() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
     }
 }
 
