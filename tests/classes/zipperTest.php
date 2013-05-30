@@ -10,165 +10,154 @@ require_once PLUGIN_BASE_PATH . '/classes/zipper.php';
  */
 class ZipperTest extends \WP_UnitTestCase
 {
-    /**
-     * @var Zipper
-     */
-    protected $zipper;
-    protected $testdir  = '';
-    protected $testfile = '';
+	/**
+	 * @var Zipper
+	 */
+	protected $zipper;
 
-    /**
-     * Sets up the fixture, for example, opens a network connection.
-     * This method is called before a test is executed.
-     */
-    public function setUp() {
-        $this->zipper = new Zipper();
-
-        // create testdir
-		$this->testdir = WP_CONTENT_DIR . '/testdir';
-		$this->create_dir( $this->testdir );
-		$this->fill_testdir( $this->testdir );
-
-		// setup testfile name
-		$this->testfile = WP_CONTENT_DIR . '/testzip.zip';
-    }
-
-    /**
-     * Tears down the fixture, for example, closes a network connection.
-     * This method is called after a test is executed.
-     */
-    public function tearDown() {
-    	if ( is_dir( $this->testdir ) )
-    		$this->delete_dir( $this->testdir );
-
-    	if ( file_exists( $this->testfile ) )
-    		unlink( $this->testfile );
-    }
-
-    private function create_dir( $dir ) {
-    	if ( is_dir( $dir ) )
-    		$this->delete_dir( $dir );
-
-    	$done = mkdir( $dir, 0777, true );
-    	if ( empty( $done ) )
-    		die( 'Could not create directory ' . $dir );
-
-    }
-
-    private function delete_dir( $dir ) {
-    	if ( ! is_dir( $dir ) )
-    		return false;
-
-    	$dir = rtrim( $dir, '/' ) . '/';
-
-		$files = glob( $dir . '*', GLOB_MARK );
-		foreach( $files as $file ){
-			if ( substr( $file, -1 ) == '/' )
-				$this->delete_dir( $file );
-			else
-				unlink( $file );
-		}
-
-		rmdir( $dir );
+	/**
+	 * Sets up the fixture, for example, opens a network connection.
+	 * This method is called before a test is executed.
+	 */
+	public function setUp() {
+		$this->zipper = new Zipper( false );
 	}
 
-	private function fill_testdir( $dir ) {
+	/**
+	 * Tears down the fixture, for example, closes a network connection.
+	 * This method is called after a test is executed.
+	 */
+	public function tearDown() {
+		$zipper = $this->zipper;
+		$cachedir = $zipper::$cache_dir;
+		$this->_rmdir( $cachedir );
 
-		$number_files  = 10;
-		$file_size_min = 100;
-		$file_size_max = 1000;
-		$file_pattern  = '%s/test_file_%d.txt';
+		$this->remove_test_dir();
 
-		for ( $f = 0; $f<$number_files; $f++ ) {
-			$number_bytes = rand( $file_size_min, $file_size_max );
-			$filename = sprintf( $file_pattern, $this->testdir, $f );
-			$handle = @fopen( $filename, 'w' );
-			if ( $handle ) {
-				$string = str_repeat( '#', $number_bytes );
-				fwrite( $handle, $string );
-				fclose( $handle );
-			} else {
-				echo 'Could not write testfile ' . $filename;
-			}
+	}
+
+	private function _rmdir( $path ) {
+		global $wp_filesystem;
+
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+
+		$wp_filesystem->rmdir( $path, true );
+
+	}
+
+	/**
+	 * create a test directory
+	 * @return string
+	 */
+	private function create_test_dir() {
+		$testdir = WP_CONTENT_DIR . '/testdir/';
+
+		if ( ! is_dir( $testdir ) )
+			mkdir( $testdir );
+
+		return $testdir;
+	}
+
+	/**
+	 * removes the test directory
+	 * @return boolean
+	 */
+	private function remove_test_dir() {
+		$testdir = WP_CONTENT_DIR . '/testdir/';
+
+		if ( ! is_dir( $testdir ) )
+			return true;
+
+		$files_inside = glob( $testdir . '*' );
+		if ( ! empty( $files_inside ) )
+			array_walk( $files_inside, function($file){unlink($file);} );
+
+		rmdir( $testdir );
+	}
+
+	/**
+	 * fill the test directory with a random number of files
+	 * @param unknown $testdir
+	 */
+	private function fill_test_dir( $testdir ) {
+		$testdir   = rtrim( $testdir, '/' ) . '/';
+		$testfile  = 'testfile';
+		$num_files = rand( 5, 10 );
+
+		for ( $i = 0; $i < $num_files; $i++ ) {
+			file_put_contents( $testdir.$testfile.$i.'.txt', str_repeat( 'FooBarBaz', rand( 10, 50 ) ) );
 		}
 	}
 
-    public function general_DataProvider() {
-    	return array(
-    		array( 'foo',      'some/path/to/badDir', false, 2 ),
-    		array( 'empty',    'testdir', false, 1 ),
-    		array( '',         'testdir', false, 3 ),
-    		array( 'testfile', 'testdir', true, 0 ),
-    	);
-    }
+	/**
+	 * @covers GalleryZip\Zipper\Zipper::__construct()
+	 */
+	public function testConstruct() {
+		$zipper = $this->zipper;
+		$this->assertTrue( $zipper::$cache_dir_exists );
+	}
 
-    public function source_dir_DataProvider() {
-    	return array(
-    		array( 'some/path/to/badDir', false ),
-    		array( 'testdir', 10 ),
-    	);
-    }
+	/**
+	 * @covers GalleryZip\Zipper\Zipper::create_cache_dir()
+	 */
+	public function testCreate_cache_dir() {
+		$zipper = $this->zipper;
+		$cachedir = $zipper::$cache_dir;
+		$actual = $this->zipper->create_cache_dir();
+		$this->assertEquals( $cachedir, $actual );
+	}
 
-    public function target_DataProvider() {
-    	return array(
-    		array( 'badName', '' ),
-    		array( 'testfile', 'testfile' ),
-    	);
-    }
-
-    /**
-     * @covers GalleryZip\Zipper\Zipper::create_tempdir()
-     */
-    public function testCreate_tempdir() {
-    	$actual = $this->zipper->create_tempdir();
-    	$this->assertTrue( $actual );
-    }
-
-    /**
-     * @covers GalleryZip\Zipper\Zipper::check_source_dir()
-     * @dataProvider  source_dir_DataProvider
-     */
-    public function testCheck_source_dir( $source, $expected ) {
-		if ( 'testdir' === $source )
-			$source = $this->testdir;
-
-		$actual = sizeof( $this->zipper->check_source_dir( $source ) );
-		$this->assertEquals( $expected, $actual );
-    }
-
-    /**
-     * @covers GalleryZip\Zipper\Zipper::check_target()
-     * @dataProvider target_DataProvider
-     */
-    public function testCheck_target( $target, $expected ) {
-		if ( 'testfile' === $target )
-			$target = $this->testfile;
-
-		if ( 'testfile' === $expected )
-			$expected = $this->testfile;
-
-		$actual = $this->zipper->check_target( $target );
+	/**
+	 * @covers GalleryZip\Zipper\Zipper::to_url()
+	 */
+	public function testTo_url() {
+		$test     = WP_CONTENT_DIR . 'test/file.zip';
+		$expected = WP_CONTENT_URL . '/test/file.zip';
+		$actual   = $this->zipper->to_url( $test );
 
 		$this->assertEquals( $expected, $actual );
+	}
 
-    }
+	/**
+	 * @covers GalleryZip\Zipper\Zipper::zip_files()
+	 */
+	public function testZip_files() {
+		$zipper   = $this->zipper;
+		$cachedir = $zipper::$cache_dir;
 
-    /**
-     * @covers GalleryZip\Zipper\Zipper::zip_dir()
-     * @dataProvider general_DataProvider
-     */
-    public function testZip_dir( $target, $source, $expected, $expected_num_errors ) {
-		if ( 'testdir' === $source )
-			$source = $this->testdir;
+		$testdir = $this->create_test_dir();
+		$this->fill_test_dir( $testdir );
 
-		if ( 'testfile' === $target )
-			$target = $this->testfile;
+		$target    = $cachedir . 'test.zip';
+		$file_list = glob( $testdir . '*' );
 
-    	$actual = $this->zipper->zip_dir( $target, $source );
-    	$actual_num_errors = sizeof( $this->zipper->get_errors() );
+		$condition = $this->zipper->zip_files( $target, $file_list );
 
-    	$this->assertEquals( $expected_num_errors, $actual_num_errors );
-		$this->assertEquals( $expected, $actual );
-    }
+		$this->assertTrue( $condition );
+		$this->assertFileExists( $target );
+	}
 
+	/**
+	 * @covers GalleryZip\Zipper\Zipper::zip_images()
+	 */
+	public function testZip_images() {
+		$zipper   = $this->zipper;
+		$cachedir = $zipper::$cache_dir;
+
+		$testdir = $this->create_test_dir();
+		$this->fill_test_dir( $testdir );
+
+		$target    = 'test.zip';
+		$file_list = glob( $testdir . '*' );
+
+		$zipfile = $this->zipper->zip_images( $target, $file_list );
+
+		$beginns_with_http = ( 0 == strpos( $zipfile, 'http' ) );
+
+		$this->assertTrue( $beginns_with_http );
+
+	}
 }

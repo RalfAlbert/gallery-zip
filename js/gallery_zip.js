@@ -1,6 +1,6 @@
 /**
  * jQuery for plugin GalleryZip
- * @version 2013-05-14
+ * @version 2013-05-30
  */
 jQuery(document).ready(
 	function($){
@@ -17,7 +17,10 @@ jQuery(document).ready(
 									document.location = response.result;
 								else
 									alert( 'Could not create zip' );
+							} else {
+								alert( 'Sorry, but something went wrong while creating the zip file.' );
 							}
+							
 						}
 					);
 				}
