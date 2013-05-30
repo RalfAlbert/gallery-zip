@@ -13,6 +13,9 @@ namespace GalleryZip;
 
 add_action( 'plugins_loaded', __NAMESPACE__ . '\gallery_zip_start', 10, 0 );
 
+/**
+ * Invoke the plugin and load the needed classes
+ */
 function gallery_zip_start() {
 	// simple autoloader
 	$classes = glob( dirname( __FILE__ ) . '/classes/*.php' );
@@ -34,11 +37,17 @@ function gallery_zip_start() {
 	}
 }
 
+/**
+ * Adding the needed hooks
+ */
 function add_hooks() {
 	add_action( 'wp_ajax_get_galleryzip',        __NAMESPACE__ . '\get_gallery_zip', 10, 0 );
 	add_action( 'wp_ajax_nopriv_get_galleryzip', __NAMESPACE__ . '\get_gallery_zip', 10, 0 );
 }
 
+/**
+ * Enqueu the JavaScript
+ */
 function enqueue_scripts() {
 	// load minified version if SCRIPT_DEBUG is true
 	$min = ( defined( 'SCRIPT_DEBUG' ) && true == SCRIPT_DEBUG ) ? '' : '.min';
@@ -57,6 +66,9 @@ function enqueue_scripts() {
 	wp_localize_script( 'gallery-zip', 'GalleryZip', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 }
 
+/**
+ * Ajax callback for creating the zip-file and sending the url to zip-file
+ */
 function get_gallery_zip() {
 	$send_result = function( $result = '' ) {
 		if ( is_array( $result ) )

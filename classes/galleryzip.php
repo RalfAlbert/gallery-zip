@@ -3,20 +3,47 @@ namespace GalleryZip;
 
 use GalleryZip\Zipper\Zipper;
 
+/**
+ * ToDo
+ *
+ * - make image sizes as option
+ * - make link text and classes for link as option
+ * - add option to cache zip-files or not (and if, how long)
+ *
+ */
 class GalleryZip
 {
-	const SESSION_KEY = 'gallery-zip';
-
+	/**
+	 * DataContainer
+	 * @var object
+	 */
 	private static $dc = null;
 
-	// one of a predefined sizes (thumbnail, medium, large or full) or a
-	// custom size registered with add_image_size
+	/**
+	 * One of a predefined sizes (thumbnail, medium, large or full) or a
+	 * custom size registered with add_image_size
+	 * Will be removed in a future version with an option
+	 *
+	 * @var string
+	 */
 	const IMAGE_SIZE  = 'full';
 
+	/**
+	 * Instance of this class
+	 * @var object
+	 */
 	private static $instance = null;
 
+	/**
+	 * Array with pathes to images
+	 * @var array
+	 */
 	public static $images = array();
 
+	/**
+	 * Returns an instance of this class
+	 * @param	object	$dc		Optional instance of a DataContainer
+	 */
 	public static function get_instance( $dc = null ) {
 		self::get_datacontainer( $dc );
 
@@ -26,11 +53,20 @@ class GalleryZip
 		return self::$instance;
 	}
 
+	/**
+	 * Constructor
+	 * - removes the original shortcode
+	 * - add the custom shortcode
+	 */
 	private final function __construct() {
 		remove_shortcode( 'gallery' );
 		add_shortcode( 'gallery', array( __CLASS__, 'gallery_zip_shortcode' ) );
 	}
 
+	/**
+	 * Returns the DataContainer or create a new one if none is set
+	 * @param	object	$dc		DataContainer
+	 */
 	private static function get_datacontainer( $dc = null ) {
 		if ( null === self::$dc ) {
 			if ( null !== $dc && ( $dc instanceof GalleryZip_DataContainer ) )
@@ -40,6 +76,13 @@ class GalleryZip
 		}
 	}
 
+	/**
+	 * The custom shortcode for the gallery
+	 * This shortcode fetch the arguments for the shortcode and passes them to the original
+	 * shortcode. After this, it appends a link to download the zip-file.
+	 * @param	array	$atts	Shortcode attributes
+	 * @return	string			HTML of the gallery
+	 */
 	public static function gallery_zip_shortcode( $atts ) {
 		require_once ABSPATH . 'wp-includes/media.php';
 		$output = gallery_shortcode( $atts );
@@ -55,6 +98,12 @@ class GalleryZip
 		return $output;
 	}
 
+	/**
+	 * Get the list of images from a gallery.
+	 * @param	integer	$post_id	ID of the post with gallery(s)
+	 * @param	array	$atts		Shortcode attributes
+	 * @return	array				Array with pathes to the gallery-images
+	 */
 	protected static function get_gallery_images_from_shortcode( $post_id, $atts ) {
 		// use the post ID if the attribute 'ids' is not set or empty
 		$id = ( ! isset( $atts['ids'] ) || empty( $atts['ids'] ) ) ?
@@ -75,6 +124,12 @@ class GalleryZip
 		return $images;
 	}
 
+	/**
+	 * Get the image-pathes from a gallery. Handles galleries after WP 3.5 and before
+	 * @param	string	$id			Comma seperated list of attachment-IDs (>WP3.5) or the post ID (<WP3.5)
+	 * @param	string	$exclude	Comma seperated list of images to exclude from the gallery
+	 * @return	array				Array with image-apthes
+	 */
 	protected static function get_gallery_images( $id, $exclude ) {
 		$images     = array();
 		$query_args = array(
@@ -112,6 +167,12 @@ class GalleryZip
 		return $images;
 	}
 
+	/**
+	 * Ceates the zip-file and send the url of the zip-file to the browser for download
+	 * @param	integer	$post_id		Post ID
+	 * @param	integer	$gallery_id		The n-th gallery in the post
+	 * @return	string					URL to the zip-file
+	 */
 	public static function get_images_ajax_callback( $post_id = 0, $gallery_id = 0 ) {
 		self::get_datacontainer();
 
